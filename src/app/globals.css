@@ -17,6 +17,15 @@
 
 html {
   scroll-behavior: smooth;
+  background-color: #fcfcf9;
+}
+
+body {
+  font-family: var(--font-outfit), sans-serif;
+  color: #1a1a2e;
+  background-color: #fcfcf9;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 html,

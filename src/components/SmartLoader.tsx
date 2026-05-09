@@ -41,7 +41,8 @@ export default function SmartLoader() {
           left: 0;
           width: 100%;
           height: 100%;
-          background: #0f0f1a;
+          background: rgba(15, 15, 26, 0.8);
+          backdrop-filter: blur(10px);
           display: flex;
           justify-content: center;
           align-items: center;

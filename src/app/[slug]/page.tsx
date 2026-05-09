@@ -60,7 +60,7 @@ export default function DynamicPage() {
       <Navbar />
       <main style={{ minHeight: '100vh', background: '#fcfcf9' }}>
         {/* Banner Section */}
-        <div style={{ 
+        <div className="dynamic-banner" style={{ 
           height: '400px', 
           background: 'linear-gradient(rgba(26, 26, 46, 0.7), rgba(26, 26, 46, 0.9)), url("https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1600") center/cover no-repeat',
           display: 'flex',
@@ -79,7 +79,7 @@ export default function DynamicPage() {
         </div>
 
         {/* Main Content Area */}
-        <div style={{ maxWidth: '1000px', margin: '-80px auto 0', position: 'relative', zIndex: 10, padding: '0 20px' }}>
+        <div className="dynamic-content-wrap" style={{ maxWidth: '1000px', margin: '-80px auto 0', position: 'relative', zIndex: 10, padding: '0 20px' }}>
           <div style={{ background: '#fff', padding: '60px', borderRadius: '32px', boxShadow: '0 30px 60px rgba(0,0,0,0.08)', border: '1px solid rgba(0,0,0,0.02)' }}>
             <div 
               className="rich-text-content"

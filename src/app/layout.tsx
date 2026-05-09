@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import SmartLoader from "@/components/SmartLoader";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -23,7 +24,10 @@ export default function RootLayout({
       className={`${outfit.variable} antialiased h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>{children}</body>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <SmartLoader />
+        {children}
+      </body>
     </html>
   );
 }

@@ -65,8 +65,14 @@ export default function LoginPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      // Redirect or refresh
-      window.location.href = '/dashboard'
+      const { data: { user } } = await supabase.auth.getUser()
+      const role = user?.user_metadata?.role || 'user'
+      
+      if (role === 'admin') {
+        window.location.href = '/dashboard'
+      } else {
+        window.location.href = '/chat'
+      }
     }
   }
 

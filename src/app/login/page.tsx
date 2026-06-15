@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ScalesIcon } from '@/components/Icons'
-import { createClient } from '@/lib/supabase/client'
-
 /* ── Eye icon ─────────────────────────────────────── */
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -45,35 +43,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const supabase = createClient()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (error) {
-      setError(error.message)
+    // Backend removed: Simulating login
+    setTimeout(() => {
       setLoading(false)
-    } else {
-      const { data: { user } } = await supabase.auth.getUser()
-      const role = user?.user_metadata?.role || 'user'
-      
-      if (role === 'admin') {
-        window.location.href = '/dashboard'
-      } else {
-        window.location.href = '/chat'
-      }
-    }
+      window.location.href = '/chat'
+    }, 1000)
   }
 
   if (!mounted) return null

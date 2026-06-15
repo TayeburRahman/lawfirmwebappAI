@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { loadStripe } from '@stripe/stripe-js'
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { ScalesIcon } from '@/components/Icons'
-import { createClient } from '@/lib/supabase/client'
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
-
 /* ── Step Icons ───────────────────────────────────── */
 function UserIcon() {
   return (
@@ -81,42 +75,6 @@ function CheckIcon() {
   )
 }
 
-function StripeCheckoutForm({ clientSecret, isPackageSelected, onError, onSuccess }: { clientSecret: string, isPackageSelected: boolean, onError: (msg: string) => void, onSuccess: () => void }) {
-  const stripe = useStripe()
-  const elements = useElements()
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!stripe || !elements || !isPackageSelected) return
-    setLoading(true)
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/success`,
-      },
-      redirect: 'if_required'
-    })
-    setLoading(false)
-    if (error) {
-      onError(error.message || 'Payment failed')
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      onSuccess()
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} style={{ marginTop: '24px' }}>
-      <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', border: '1px solid #ddd' }}>
-        <PaymentElement options={{ layout: 'tabs' }} />
-      </div>
-
-      <button type="submit" className={`signin-submit-btn ${loading ? 'loading' : ''}`} disabled={!stripe || loading || !isPackageSelected} style={{ marginTop: '24px' }}>
-        {loading ? 'Processing Payment...' : (isPackageSelected ? 'Pay & Complete Registration' : 'Select a package first')}
-      </button>
-    </form>
-  )
-}
 
 const features = [
   'Expert legal consultation',
@@ -151,29 +109,12 @@ export default function RegisterPage() {
   const [selectedPackage, setSelectedPackage] = useState<any>(null)
 
   useEffect(() => {
-    const fetchPackages = async () => {
-      const supabaseClient = createClient()
-      const { data } = await supabaseClient.from('packages').select('*').order('price', { ascending: true })
-      if (data) {
-        setPackages(data)
-        if (data.length > 0) {
-          // Fetch a default clientSecret just to render the UI, but don't select the package
-          const res = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ packageId: data[0].id, email })
-          })
-          const resData = await res.json()
-          if (resData.clientSecret) {
-            setClientSecret(resData.clientSecret)
-          }
-        }
-      }
-    }
-    fetchPackages()
-  }, [email])
-
-  const supabase = createClient()
+    // Backend removed: Setting mock packages
+    setPackages([
+      { id: 1, name: 'Basic Consultation', price: 49.99, description: '30 min initial consultation' },
+      { id: 2, name: 'Premium Review', price: 149.99, description: 'Document review + 1hr consultation' }
+    ])
+  }, [])
 
   if (!mounted) return null
 
@@ -193,17 +134,12 @@ export default function RegisterPage() {
       return
     }
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { first_name: firstName, last_name: lastName, phone, country, role: 'user' } }
-    })
-    if (error) {
-      setError(error.message)
+    
+    // Backend removed: Simulate signup
+    setTimeout(() => {
       setLoading(false)
-      return
-    }
-    handleStepChange('payment')
+      handleStepChange('verify') // or 'payment' if you prefer skipping OTP
+    }, 1000)
   }
 
   const handleOtpInput = (index: number, val: string) => {
@@ -328,14 +264,11 @@ export default function RegisterPage() {
                 e.preventDefault();
                 setLoading(true);
                 setError('');
-                const token = otp.join('');
-                const { error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
-                if (error) {
-                  setError(error.message);
+                // Backend removed: Simulate OTP success
+                setTimeout(() => {
                   setLoading(false);
-                } else {
                   handleStepChange('payment');
-                }
+                }, 1000)
               }}>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '8px' }}>
                   {otp.map((d, i) => (
@@ -345,10 +278,8 @@ export default function RegisterPage() {
                 {error && <p style={{ color: '#ff4d4d', fontSize: '14px', marginTop: '10px', textAlign: 'center' }}>{error}</p>}
                 <button type="submit" className={`signin-submit-btn ${loading ? 'loading' : ''}`} disabled={loading}>{loading ? 'Verifying...' : 'Verify Email'}</button>
                 <p className="signin-new-client" style={{ marginTop: '16px' }}>
-                  Didn&apos;t get the code? <button type="button" className="signin-gold-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={async () => {
-                    const { error } = await supabase.auth.resend({ type: 'signup', email });
-                    if (error) setError(error.message);
-                    else alert('OTP resent to your email.');
+                  Didn&apos;t get the code? <button type="button" className="signin-gold-link" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => {
+                    alert('OTP resent to your email.');
                   }}>Resend OTP</button>
                 </p>
               </form>
@@ -368,20 +299,9 @@ export default function RegisterPage() {
                   packages.map(pkg => (
                     <div
                       key={pkg.id}
-                      onClick={async () => {
+                      onClick={() => {
                         setSelectedPackage(pkg)
-                        setClientSecret('')
-                        const res = await fetch('/api/checkout', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ packageId: pkg.id, email })
-                        })
-                        const data = await res.json()
-                        if (data.clientSecret) {
-                          setClientSecret(data.clientSecret)
-                        } else {
-                          setError(data.error || 'Failed to initialize payment')
-                        }
+                        setClientSecret('dummy-secret')
                       }}
                       style={{
                         padding: '20px',
@@ -406,14 +326,16 @@ export default function RegisterPage() {
 
               {clientSecret && (
                 <div style={{ marginTop: '24px' }}>
-                  <Elements stripe={stripePromise} options={{ clientSecret }}>
-                    <StripeCheckoutForm 
-                      clientSecret={clientSecret} 
-                      isPackageSelected={!!selectedPackage}
-                      onError={(e) => setError(e)}
-                      onSuccess={() => window.location.href = '/success'}
-                    />
-                  </Elements>
+                  <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', border: '1px solid #ddd', textAlign: 'center' }}>
+                    <p>Payment module removed.</p>
+                    <button 
+                      onClick={() => window.location.href = '/success'} 
+                      className="signin-submit-btn" 
+                      style={{ marginTop: '16px' }}
+                    >
+                      Simulate Payment Success
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

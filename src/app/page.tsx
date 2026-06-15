@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { createClient } from '@/lib/supabase/client'
 import {
   LogoIcon,
   ScalesIcon,
@@ -124,14 +123,9 @@ const companyLinks = [
 /* ─── Page ──────────────────────────────────────────────────── */
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
-  const supabase = createClient()
 
   useEffect(() => {
-    async function loadUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    loadUser()
+    // Backend removed: User defaults to null
   }, [])
 
   return (

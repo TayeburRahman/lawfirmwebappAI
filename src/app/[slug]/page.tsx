@@ -4,37 +4,20 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import { createClient } from '@/lib/supabase/client'
 
 export default function DynamicPage() {
   const { slug } = useParams()
   const [pageData, setPageData] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchData() {
-      // Fetch User
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      setUser(authUser)
-
-      // Fetch Page Content
-      const { data, error } = await supabase
-        .from('pages')
-        .select('*')
-        .eq('slug', slug)
-        .single()
-
-      if (error) {
-        console.error('Error fetching page:', error)
-      } else {
-        setPageData(data)
-      }
-      setLoading(false)
-    }
-
-    if (slug) fetchData()
+    // Backend removed: Setting mock page data based on slug
+    setPageData({
+      title: slug ? String(slug).replace(/-/g, ' ').toUpperCase() : 'Legal Services',
+      content_html: '<p>This is a mock page because the backend has been removed. Please set up a Node.js backend to serve actual content.</p>'
+    })
+    setLoading(false)
   }, [slug])
 
   if (loading) {

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type Package = {
   id: string
@@ -18,12 +17,9 @@ export default function ManagePackagesPage() {
   const [price, setPrice] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const supabase = createClient()
-
   const fetchPackages = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('packages').select('*').order('price', { ascending: true })
-    if (data) setPackages(data)
+    setPackages([]) // Mocked empty list
     setLoading(false)
   }
 
@@ -35,18 +31,15 @@ export default function ManagePackagesPage() {
     e.preventDefault()
     
     if (editingId) {
-      const { error } = await supabase.from('packages').update({ name, description, price: parseFloat(price) }).eq('id', editingId)
-      if (!error) {
-        setEditingId(null)
-      }
+      setPackages(packages.map(p => p.id === editingId ? { ...p, name, description, price: parseFloat(price) } : p))
+      setEditingId(null)
     } else {
-      const { error } = await supabase.from('packages').insert({ name, description, price: parseFloat(price) })
+      setPackages([...packages, { id: Math.random().toString(), name, description, price: parseFloat(price) }])
     }
     
     setName('')
     setDescription('')
     setPrice('')
-    fetchPackages()
   }
 
   const handleEdit = (pkg: Package) => {
@@ -58,8 +51,7 @@ export default function ManagePackagesPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this package?')) {
-      await supabase.from('packages').delete().eq('id', id)
-      fetchPackages()
+      setPackages(packages.filter(p => p.id !== id))
     }
   }
 

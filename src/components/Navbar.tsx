@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogoIcon } from './Icons'
-import { createClient } from '@/lib/supabase/client'
 
 const navLinks = [
   { label: 'Services', href: '/legal-consultation' },
@@ -21,10 +20,10 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    loadUser()
+    // Backend removed: statically setting user to null or dummy logic if needed.
+    // setUser(null)
 
     // Close dropdown on outside click
     const handleClick = (e: MouseEvent) => {
@@ -36,38 +35,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  async function loadUser() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    setUser(user)
-
-    // Check admin role from metadata
-    const role = user.user_metadata?.role || ''
-    setIsAdmin(role === 'admin')
-
-    // Get initials
-    const firstName = user.user_metadata?.first_name || ''
-    const lastName = user.user_metadata?.last_name || ''
-    setInitials(`${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || user.email?.charAt(0).toUpperCase() || '?')
-
-    // Try to get avatar from profiles table
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('avatar_url, first_name, last_name')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
-      if (profile?.first_name || profile?.last_name) {
-        setInitials(`${(profile.first_name || '').charAt(0)}${(profile.last_name || '').charAt(0)}`.toUpperCase() || '?')
-      }
-    } catch (_) {}
-  }
-
   async function handleSignOut() {
-    await supabase.auth.signOut()
     setUser(null)
     setDropdownOpen(false)
     router.push('/')

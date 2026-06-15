@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+
 import { PlusIcon, TrashIcon } from '@/components/Icons'
 
 // ── Types ───────────────────────────────────────────────────────────────────────
@@ -31,8 +31,6 @@ export default function ChatbotPackagesPage() {
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const supabase = createClient()
-
   useEffect(() => {
     setMounted(true)
     fetchPackages()
@@ -40,16 +38,7 @@ export default function ChatbotPackagesPage() {
 
   async function fetchPackages() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('packages')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching packages:', error)
-    } else {
-      setPackages(data || [])
-    }
+    setPackages([]) // Mock empty array
     setLoading(false)
   }
 
@@ -58,30 +47,13 @@ export default function ChatbotPackagesPage() {
     setIsSubmitting(true)
 
     if (editingId) {
-      const { data, error } = await supabase
-        .from('packages')
-        .update({ name, price: parseFloat(price), description })
-        .match({ id: editingId })
-        .select()
-
-      if (error) {
-        alert('Error updating package: ' + error.message)
-      } else {
-        setPackages(packages.map(p => p.id === editingId ? data[0] : p))
-        resetForm()
-      }
+      const newPkg = { id: editingId, name, price: parseFloat(price), description, created_at: new Date().toISOString() }
+      setPackages(packages.map(p => p.id === editingId ? newPkg : p))
+      resetForm()
     } else {
-      const { data, error } = await supabase
-        .from('packages')
-        .insert([{ name, price: parseFloat(price), description }])
-        .select()
-
-      if (error) {
-        alert('Error adding package: ' + error.message + '\n\nMake sure the "packages" table exists in your Supabase project.')
-      } else {
-        setPackages([data[0], ...packages])
-        resetForm()
-      }
+      const newPkg = { id: Math.random().toString(), name, price: parseFloat(price), description, created_at: new Date().toISOString() }
+      setPackages([newPkg, ...packages])
+      resetForm()
     }
     setIsSubmitting(false)
   }
@@ -104,17 +76,7 @@ export default function ChatbotPackagesPage() {
 
   async function handleDeletePackage(id: string) {
     if (!confirm('Are you sure you want to delete this package?')) return
-
-    const { error } = await supabase
-      .from('packages')
-      .delete()
-      .match({ id })
-
-    if (error) {
-      alert('Error deleting package: ' + error.message)
-    } else {
-      setPackages(packages.filter(p => p.id !== id))
-    }
+    setPackages(packages.filter(p => p.id !== id))
   }
 
   if (!mounted) return null

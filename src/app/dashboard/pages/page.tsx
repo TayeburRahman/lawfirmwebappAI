@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { createClient } from '@/lib/supabase/client'
 import 'react-quill-new/dist/quill.snow.css'
 
 // Dynamic import for ReactQuill to avoid SSR issues
@@ -27,21 +26,12 @@ export default function ManagePages() {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const supabase = createClient()
-
-  useEffect(() => {
-    fetchPages()
-  }, [])
-
   async function fetchPages() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('pages')
-      .select('*')
-      .order('title', { ascending: true })
-
-    if (error) console.error('Error fetching pages:', error)
-    else setPages(data || [])
+    setPages([
+      { id: '1', title: 'Terms of Service', slug: 'terms-of-service', content_html: '<p>Terms...</p>', updated_at: new Date().toISOString() },
+      { id: '2', title: 'Privacy Policy', slug: 'privacy-policy', content_html: '<p>Privacy...</p>', updated_at: new Date().toISOString() }
+    ])
     setLoading(false)
   }
 
@@ -56,22 +46,12 @@ export default function ManagePages() {
     if (!selectedPage) return
     setSaving(true)
 
-    const { error } = await supabase
-      .from('pages')
-      .update({
-        title: title,
-        content_html: content,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', selectedPage.id)
-
-    if (error) {
-      alert('Error updating page: ' + error.message)
-    } else {
-      fetchPages()
+    // Simulate save
+    setTimeout(() => {
+      setPages(pages.map(p => p.id === selectedPage.id ? { ...p, title, content_html: content, updated_at: new Date().toISOString() } : p))
       setSelectedPage(null)
-    }
-    setSaving(false)
+      setSaving(false)
+    }, 500)
   }
 
   if (loading) {

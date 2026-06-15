@@ -4,8 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ScalesIcon } from '@/components/Icons'
-import { createClient } from '@/lib/supabase/client'
-
 /* ── Icons ── */
 function UserIcon() {
   return (
@@ -62,7 +60,6 @@ function EyeIcon({ open }: { open: boolean }) {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [mounted, setMounted] = useState(false)
@@ -100,80 +97,33 @@ export default function ProfilePage() {
   }, [])
 
   async function loadUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error || !user) { router.push('/login'); return }
-
-    setUserId(user.id)
-
-    // Always set email from auth
-    const meta = user.user_metadata || {}
-    setFormData(prev => ({
-      ...prev,
-      email: user.email || '',
-      firstName: meta.first_name || meta.full_name?.split(' ')[0] || '',
-      lastName: meta.last_name || meta.full_name?.split(' ')[1] || '',
-      phone: meta.phone || '',
-      country: meta.country || '',
-      city: meta.city || '',
-      bio: meta.bio || '',
-    }))
-
-    // Try to fetch from profiles table (may not exist yet)
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (!profileError && profile) {
-        setFormData({
-          firstName: profile.first_name || meta.first_name || '',
-          lastName: profile.last_name || meta.last_name || '',
-          email: user.email || '',
-          phone: profile.phone || meta.phone || '',
-          country: profile.country || meta.country || '',
-          city: profile.city || meta.city || '',
-          bio: profile.bio || meta.bio || '',
-        })
-        if (profile.avatar_url) setAvatarUrl(profile.avatar_url)
-      }
-    } catch (_) {
-      // profiles table not created yet — using auth metadata fallback
-    }
+    setUserId('mock-id')
+    setFormData({
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john@example.com',
+      phone: '+1 234 567 8900',
+      country: 'Germany',
+      city: 'Berlin',
+      bio: 'Expat living in Germany.',
+    })
 
     setAlerts([
       { id: '1', message: 'Login detected from new session.', created_at: new Date().toISOString() },
-      { id: '2', message: 'Profile created successfully.', created_at: user.created_at },
+      { id: '2', message: 'Profile created successfully.', created_at: new Date().toISOString() },
     ])
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !userId) return
+    if (!file) return
     setAvatarUploading(true)
 
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${userId}/avatar.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(path, file, { upsert: true })
-
-      if (uploadError) {
-        alert('Avatar upload failed: ' + uploadError.message)
-        setAvatarUploading(false)
-        return
-      }
-
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.from('profiles').upsert({ id: userId, avatar_url: publicUrl })
-      setAvatarUrl(publicUrl + `?t=${Date.now()}`)
-    } catch (err: any) {
-      alert('Upload error: ' + (err.message || 'Please run the SQL setup script first.'))
-    }
-    setAvatarUploading(false)
+    // Simulate upload
+    setTimeout(() => {
+      setAvatarUrl(URL.createObjectURL(file))
+      setAvatarUploading(false)
+    }, 1000)
   }
 
   async function handleProfileUpdate(e: React.FormEvent) {
@@ -181,33 +131,13 @@ export default function ProfilePage() {
     setSaving(true)
     setSaveMsg('')
 
-    try {
-      const { error } = await supabase.from('profiles').upsert({
-        id: userId,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone: formData.phone,
-        country: formData.country,
-        city: formData.city,
-        bio: formData.bio,
-        updated_at: new Date().toISOString(),
-      })
+    // Simulate save
+    setTimeout(() => {
       setSaving(false)
-      if (error) {
-        if (error.message.includes('schema cache') || error.message.includes('does not exist')) {
-          setSaveMsg('❌ Database not ready. Please run the SQL setup script in your Supabase dashboard first.')
-        } else {
-          setSaveMsg('❌ ' + error.message)
-        }
-      } else {
-        setSaveMsg('✅ Profile updated successfully!')
-        setIsEditing(false)
-        setTimeout(() => setSaveMsg(''), 3000)
-      }
-    } catch (err: any) {
-      setSaving(false)
-      setSaveMsg('❌ ' + (err.message || 'Something went wrong.'))
-    }
+      setSaveMsg('✅ Profile updated successfully!')
+      setIsEditing(false)
+      setTimeout(() => setSaveMsg(''), 3000)
+    }, 1000)
   }
 
   async function handlePasswordUpdate(e: React.FormEvent) {
@@ -220,28 +150,13 @@ export default function ProfilePage() {
     setPassSaving(true)
     setPassMsg('')
 
-    // Step 1: Verify current password
-    const { error: verifyError } = await supabase.auth.signInWithPassword({
-      email: formData.email,
-      password: passwords.current,
-    })
-
-    if (verifyError) {
+    // Simulate save
+    setTimeout(() => {
       setPassSaving(false)
-      setPassMsg('❌ Current password is incorrect')
-      return
-    }
-
-    // Step 2: Update to new password
-    const { error } = await supabase.auth.updateUser({ password: passwords.new })
-    setPassSaving(false)
-    if (error) {
-      setPassMsg('❌ ' + error.message)
-    } else {
       setPassMsg('✅ Password updated successfully!')
       setPasswords({ current: '', new: '', confirm: '' })
       setTimeout(() => setPassMsg(''), 4000)
-    }
+    }, 1000)
   }
 
   const initials = `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase() || '?'
